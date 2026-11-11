@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using ReactiveUI.Avalonia;
 using System;
 
@@ -17,9 +17,6 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-#if DEBUG
-            .WithDeveloperTools()
-#endif
             .WithInterFont()
             .LogToTrace()
             .UseReactiveUI(_ => { });

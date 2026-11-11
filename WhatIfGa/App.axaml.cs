@@ -3,6 +3,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using WhatIfGa.ViewModels;
 using WhatIfGa.Views;
+using WhatIfGa.Core.Services;
+using WhatIfGa.Services;
 
 namespace WhatIfGa;
 
@@ -17,10 +19,12 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = new MainViewModel(),
-            };
+            var window = new MainWindow();
+            var controller = new AppController(new DataManager(Environment.GetEnvironmentVariable("WHATIFGA_DATA_DIRECTORY")), new RateCalculator());
+            var viewModel = new MainViewModel(window.SelectUsageFileAsync, controller, window.SelectBillHistoryFileAsync);
+            window.DataContext = viewModel;
+            window.Closed += (_, _) => viewModel.Dispose();
+            desktop.MainWindow = window;
         }
 
         base.OnFrameworkInitializationCompleted();
