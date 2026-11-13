@@ -1,0 +1,356 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:WhatIfGa.ViewModels"
+        xmlns:charts="using:WhatIfGa.Controls"
+        x:Class="WhatIfGa.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Width="1440" Height="980" MinWidth="1080" MinHeight="740"
+        Background="#F5F7F5" Foreground="#233841"
+        FontFamily="Inter, Segoe UI, sans-serif" FontSize="13"
+        Title="Wattif GA · Electricity rate explorer">
+  <Window.Resources>
+    <DataTemplate x:Key="RatePlanNameTemplate" x:DataType="vm:PlanRowViewModel">
+      <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding Description}" />
+    </DataTemplate>
+  </Window.Resources>
+  <Window.Styles>
+    <Style Selector="TextBlock"><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#6D7E82" /></Style>
+    <Style Selector="TextBlock.eyebrow"><Setter Property="Foreground" Value="#6D7E82" /><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="1.2" /></Style>
+    <Style Selector="TextBlock.heading"><Setter Property="FontSize" Value="18" /><Setter Property="FontWeight" Value="SemiBold" /></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="White" /><Setter Property="BorderBrush" Value="#E2E9E4" /><Setter Property="BorderThickness" Value="1" /><Setter Property="CornerRadius" Value="12" /><Setter Property="Padding" Value="22" /></Style>
+    <Style Selector="Border.status"><Setter Property="Background" Value="#EDF2ED" /><Setter Property="BorderBrush" Value="#DCE6DC" /></Style>
+    <Style Selector="Border.status.error"><Setter Property="Background" Value="#FBEDE8" /><Setter Property="BorderBrush" Value="#E6C4BA" /></Style>
+    <Style Selector="Button"><Setter Property="CornerRadius" Value="7" /><Setter Property="Padding" Value="15,10" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="Cursor" Value="Hand" /></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#16765F" /><Setter Property="Foreground" Value="White" /><Setter Property="BorderThickness" Value="0" /></Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#105A48" /></Style>
+    <Style Selector="Button.secondary"><Setter Property="Background" Value="White" /><Setter Property="Foreground" Value="#26443D" /><Setter Property="BorderBrush" Value="#D6E1D9" /><Setter Property="BorderThickness" Value="1" /></Style>
+    <Style Selector="Button.nav"><Setter Property="Background" Value="Transparent" /><Setter Property="Foreground" Value="#D6E4E3" /><Setter Property="HorizontalContentAlignment" Value="Left" /><Setter Property="HorizontalAlignment" Value="Stretch" /><Setter Property="Padding" Value="14,13" /><Setter Property="FontSize" Value="13" /></Style>
+    <Style Selector="Button.nav:pointerover /template/ ContentPresenter"><Setter Property="Background" Value="#29464C" /></Style>
+    <Style Selector="NumericUpDown"><Setter Property="CornerRadius" Value="6" /><Setter Property="Minimum" Value="0" /></Style>
+    <Style Selector="TabItem"><Setter Property="Padding" Value="4,10" /><Setter Property="Margin" Value="0,0,20,0" /><Setter Property="FontSize" Value="13" /></Style>
+    <Style Selector="ListBoxItem"><Setter Property="CornerRadius" Value="6" /><Setter Property="Padding" Value="10" /></Style>
+  </Window.Styles>
+  <Grid ColumnDefinitions="194,*">
+    <Border Background="#1B343D" Padding="18,28,18,22">
+      <DockPanel LastChildFill="True">
+        <StackPanel DockPanel.Dock="Top" Spacing="5" Margin="8,0,0,34">
+          <StackPanel Orientation="Horizontal" Spacing="9">
+            <Border Background="#BDE3A9" CornerRadius="8" Width="31" Height="34"><TextBlock Text="ϟ" FontSize="27" FontWeight="Bold" Foreground="#1B343D" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+            <TextBlock Text="wattif" FontSize="27" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock Text="GEORGIA RATE EXPLORER" Foreground="#9FB7B8" FontSize="8.5" LetterSpacing="1.5" Margin="1,7,0,0" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Spacing="10">
+          <Border Background="#29444B" CornerRadius="9" Padding="13">
+            <StackPanel Spacing="7"><TextBlock Text="●  Local by design" Foreground="#CAE3B9" FontWeight="SemiBold" FontSize="12" /><TextBlock Text="Your electricity history stays on this computer." Foreground="#AFC3C5" FontSize="11" LineHeight="17" /></StackPanel>
+          </Border>
+          <TextBlock Text="Residential Service preview" Foreground="#8BA7AC" FontSize="10" Margin="4,4,0,0" />
+        </StackPanel>
+        <StackPanel Spacing="5">
+          <TextBlock Text="WORKSPACE" Foreground="#83A0A6" FontSize="10" LetterSpacing="1.1" Margin="14,0,0,9" />
+          <Button Classes="nav" Content="◫   Overview" Click="OverviewClick" />
+          <Button Classes="nav" Content="↗   What-if scenarios" Click="ScenariosClick" />
+          <Button Classes="nav" Content="≡   Bill details" Click="BillsClick" />
+          <Border Height="1" Background="#365059" Margin="12,19,12,16" />
+          <TextBlock Text="A little insight.&#10;A smarter energy day." Foreground="#9AB4B8" FontSize="12" LineHeight="20" Margin="14,0,8,0" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+    <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" Margin="30,28,30,18">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,23">
+        <StackPanel Spacing="7">
+          <TextBlock Text="YOUR ENERGY WORKSPACE" Classes="eyebrow" Foreground="#63806D" />
+          <TextBlock Text="Your energy, understood." FontSize="29" FontWeight="SemiBold" LetterSpacing="-0.7" />
+          <TextBlock Text="Explore your usage. Understand your bill. Find your next saving." Classes="muted" FontSize="12" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+          <Button Content="Load sample year" Command="{Binding LoadDemoCommand}" Classes="secondary" />
+          <Button Content="↑  Import usage" Command="{Binding ImportCommand}" Classes="primary" />
+        </StackPanel>
+      </Grid>
+      <StackPanel Grid.Row="1" Spacing="6" Margin="0,0,0,14">
+        <Border Classes="status" Classes.error="{Binding IsStatusError}"
+                BorderThickness="1" CornerRadius="8" Padding="13,9">
+          <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="19,*" VerticalAlignment="Center">
+              <TextBlock Text="●" Foreground="#43816A" VerticalAlignment="Center" FontSize="10" />
+              <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" FontSize="12"
+                         VerticalAlignment="Center" />
+            </Grid>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0">
+              <Button Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}"
+                      Padding="9,3" FontSize="11" />
+              <ToggleButton Content="Import report" IsChecked="{Binding IsImportReportOpen, Mode=TwoWay}"
+                            Padding="9,3" FontSize="11" />
+            </StackPanel>
+          </Grid>
+        </Border>
+        <Border IsVisible="{Binding IsImportReportOpen}" Classes="card" Padding="15,12">
+          <ScrollViewer MaxHeight="175" VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Spacing="7">
+              <TextBlock Text="{Binding DataSource}" FontWeight="SemiBold" />
+              <TextBlock Text="{Binding DataSummary}" Classes="muted" FontSize="11" />
+              <TextBlock Text="{Binding ValidationSummary}" FontSize="12" />
+              <ItemsControl ItemsSource="{Binding ValidationMessages}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{Binding}" Margin="0,2,0,3" Classes="muted" FontSize="11" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBlock Text="Import a Georgia Power download or hourly usage file in CSV or XLSX format. Validated readings are stored on this computer."
+                         Classes="muted" FontSize="11" />
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+      </StackPanel>
+      <TabControl x:Name="WorkspaceTabs" SelectedIndex="{Binding SelectedTabIndex}" Grid.Row="2" Background="Transparent">
+        <TabItem Header="Overview">
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="18" Margin="0,18,0,10">
+              <Grid ColumnDefinitions="*,*,*">
+                <Border Classes="card" Margin="0,0,12,0">
+                  <StackPanel Spacing="8"><TextBlock Text="TOTAL ELECTRICITY USED" Classes="eyebrow" /><TextBlock Text="{Binding TotalUsageText}" FontSize="29" FontWeight="SemiBold" /><TextBlock Text="{Binding DataSummary}" Classes="muted" FontSize="11" /></StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="card" Margin="0,0,12,0">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="ESTIMATED ENERGY COST" Classes="eyebrow" />
+                    <TextBlock Text="{Binding EstimatedCostText}" FontSize="29" FontWeight="SemiBold" />
+                    <ComboBox ItemsSource="{Binding Plans}" SelectedItem="{Binding SelectedPlan, Mode=TwoWay}"
+                              ItemTemplate="{StaticResource RatePlanNameTemplate}" HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="Rate plan for estimated energy cost" />
+                    <TextBlock Text="{Binding BillingScheduleSummary}" Classes="muted" FontSize="11" />
+                    <TextBlock Text="{Binding PlanSelectionMessage}" Classes="muted" FontSize="11" />
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Classes="card">
+                  <StackPanel Spacing="8"><TextBlock Text="AVERAGE BILLING PERIOD COST" Classes="eyebrow" /><TextBlock Text="{Binding AverageMonthlyText}" FontSize="29" FontWeight="SemiBold" Foreground="#16765F" /><TextBlock Text="Energy charges only · before fees &amp; taxes" Classes="muted" FontSize="11" /></StackPanel>
+                </Border>
+              </Grid>
+              <Border IsVisible="{Binding HasBillingNotice}" Background="#F9F2E5"
+                      BorderBrush="#E9DFC9" BorderThickness="1" CornerRadius="8" Padding="13,10">
+                <TextBlock Text="{Binding BillingNotice}" Foreground="#755B31" FontSize="12" />
+              </Border>
+              <Grid ColumnDefinitions="1.55*,*">
+                <Border Classes="card" Margin="0,0,16,0">
+                  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <TextBlock Text="{Binding ChartTitle}" Classes="heading" VerticalAlignment="Center" />
+                      <ComboBox Grid.Column="1" SelectedIndex="{Binding ChartModeIndex}" FontSize="11" Padding="9,6" MinWidth="130">
+                        <ComboBoxItem Content="Monthly usage" /><ComboBoxItem Content="Daily rhythm" /><ComboBoxItem Content="Estimated costs" /><ComboBoxItem Content="Next-year replay" />
+                      </ComboBox>
+                    </Grid>
+                    <TextBlock Grid.Row="1" Text="{Binding ChartSubtitle}" Classes="muted" FontSize="11" Margin="0,6,0,10" />
+                    <charts:UsageChart Grid.Row="2" Points="{Binding ChartPoints}" Unit="{Binding ChartUnit}" Height="265" />
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="17" HorizontalAlignment="Center" Margin="0,3,0,9">
+                      <TextBlock Text="━  Original usage" Foreground="#19816B" FontSize="11" /><TextBlock Text="━  Scenario" Foreground="#5B7DB8" FontSize="11" IsVisible="{Binding HasScenario}" />
+                    </StackPanel>
+                    <TextBlock Grid.Row="4" Text="Hover to inspect · Arrow keys to explore · Ctrl + scroll to zoom" Classes="muted" FontSize="10" HorizontalAlignment="Center" />
+                  </Grid>
+                </Border>
+                <Border Grid.Column="1" Classes="card">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto"><TextBlock Text="Your rate plans" Classes="heading" /><Border Grid.Column="1" Background="#F0F4F0" CornerRadius="5" Padding="7,4"><TextBlock Text="7 PLANS" FontSize="9" Foreground="#5F776A" FontWeight="SemiBold" /></Border></Grid>
+                    <TextBlock Text="Residential Service is ready. Additional plans are visible for future comparison." Classes="muted" FontSize="11" LineHeight="17" />
+                    <ItemsControl ItemsSource="{Binding Plans}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PlanRowViewModel">
+                          <Border BorderBrush="#EBEFEC" BorderThickness="0,0,0,1" Padding="0,9" ToolTip.Tip="{Binding Description}">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                              <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Medium" />
+                              <TextBlock Grid.Column="1" Text="{Binding CostText}" FontSize="12" FontWeight="SemiBold" Foreground="#16765F" />
+                              <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding Status}" Classes="muted" FontSize="10" Margin="0,4,0,0" />
+                            </Grid>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Button Content="Recalculate available plans" Command="{Binding CompareCommand}" Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontSize="11" Padding="10,8" />
+                  </StackPanel>
+                </Border>
+              </Grid>
+              <Border Background="#E8F0E4" BorderBrush="#D7E3D1" BorderThickness="1" CornerRadius="11" Padding="23,20">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Width="38" Height="38" Background="#D3E5C8" CornerRadius="19" VerticalAlignment="Center" Margin="0,0,16,0"><TextBlock Text="✓" Foreground="#296748" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center" /></Border>
+                  <StackPanel Grid.Column="1" Spacing="5"><TextBlock Text="{Binding RecommendationText}" FontSize="15" FontWeight="SemiBold" /><TextBlock Text="{Binding RecommendationDetail}" Foreground="#5A705D" FontSize="11" /></StackPanel>
+                  <Button Grid.Column="2" Content="Explore a what-if  →" Click="ScenariosClick" Classes="secondary" VerticalAlignment="Center" Margin="18,0,0,0" FontSize="12" />
+                </Grid>
+              </Border>
+              <TextBlock Text="Rates follow the supplied reference: winter $0.082/kWh; summer tiers $0.088, $0.146 and $0.151/kWh. These estimates exclude service charges, riders and taxes." Classes="muted" FontSize="10" LineHeight="16" />
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+        <TabItem Header="What-if scenarios">
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="18" Margin="0,18,0,10">
+              <StackPanel Spacing="6"><TextBlock Text="Small changes. Measurable possibilities." FontSize="23" FontWeight="SemiBold" /><TextBlock Text="Create a scenario, then compare it with your original history. Your imported data stays intact." Classes="muted" FontSize="12" /></StackPanel>
+              <Grid ColumnDefinitions="*,1.2*">
+                <Border Classes="card" Margin="0,0,18,0">
+                  <StackPanel Spacing="15">
+                    <TextBlock Text="Build your scenario" Classes="heading" />
+                    <StackPanel Spacing="6"><TextBlock Text="Scenario name" FontSize="12" /><TextBox Text="{Binding ScenarioName}" PlaceholderText="e.g. Smarter summer evenings" /></StackPanel>
+                    <Grid ColumnDefinitions="*,120"><StackPanel Spacing="5" Margin="0,0,12,0"><TextBlock Text="Use less electricity (%)" FontWeight="Medium" /><TextBlock Text="Reduce every hourly reading by this percentage." Classes="muted" FontSize="11" /></StackPanel><NumericUpDown Grid.Column="1" Value="{Binding ReductionPercent}" Minimum="0" Maximum="100" Increment="1" FormatString="0.##" AutomationProperties.Name="Usage reduction percentage" /></Grid>
+                    <Border Height="1" Background="#E5ECE7" />
+                    <TextBlock Text="Move usage to a different time" FontWeight="Medium" />
+                    <TextBlock Text="Choose the share of electricity to move from a time window. Shifts wrap within the same day and preserve energy." Classes="muted" FontSize="11" LineHeight="17" />
+                    <Grid ColumnDefinitions="*,*">
+                      <StackPanel Spacing="6" Margin="0,0,12,0"><TextBlock Text="Share to move (%)" FontSize="11" /><NumericUpDown Value="{Binding ShiftPercent}" Minimum="0" Maximum="100" Increment="5" FormatString="0.##" AutomationProperties.Name="Share of selected usage to shift" /></StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="Shift by hours" FontSize="11" /><NumericUpDown Value="{Binding ShiftHours}" Minimum="-23" Maximum="23" Increment="1" FormatString="0" ParsingNumberStyle="Integer" AutomationProperties.Name="Hours to shift selected usage" /></StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*">
+                      <StackPanel Spacing="6" Margin="0,0,12,0"><TextBlock Text="From hour (inclusive)" FontSize="11" /><NumericUpDown Value="{Binding SourceStartHour}" Minimum="0" Maximum="23" Increment="1" FormatString="0" ParsingNumberStyle="Integer" /></StackPanel>
+                      <StackPanel Grid.Column="1" Spacing="6"><TextBlock Text="To hour (exclusive)" FontSize="11" /><NumericUpDown Value="{Binding SourceEndHour}" Minimum="0" Maximum="24" Increment="1" FormatString="0" ParsingNumberStyle="Integer" /></StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,5,0,0"><Button Content="Run scenario  →" Command="{Binding RunScenarioCommand}" Classes="primary" /><Button Content="Reset" Command="{Binding ResetScenarioCommand}" Classes="secondary" /></StackPanel>
+                    <TextBlock Text="Shifts within a day preserve the total kWh in each billing period, so a shift alone leaves Residential Service costs the same." Foreground="#6C7D70" FontSize="11" LineHeight="17" />
+                  </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="18">
+                  <Border Background="#E8F0E4" CornerRadius="12" Padding="23">
+                    <StackPanel Spacing="9"><TextBlock Text="SCENARIO SAVINGS" Classes="eyebrow" /><TextBlock Text="{Binding ScenarioSavingsText}" FontSize="34" Foreground="#16765F" FontWeight="SemiBold" /><TextBlock Text="{Binding ScenarioSummary}" FontSize="12" Foreground="#5A705D" LineHeight="19" /><StackPanel Orientation="Horizontal" Spacing="9"><TextBlock Text="Modified energy cost:" FontSize="12" /><TextBlock Text="{Binding ScenarioCostText}" FontWeight="Medium" FontSize="13" /></StackPanel></StackPanel>
+                  </Border>
+                  <Border Classes="card">
+                    <StackPanel Spacing="10"><TextBlock Text="Original vs. scenario" Classes="heading" /><TextBlock Text="{Binding ChartSubtitle}" Classes="muted" FontSize="11" /><charts:UsageChart Points="{Binding ChartPoints}" Unit="{Binding ChartUnit}" Height="250" /><StackPanel Orientation="Horizontal" Spacing="18"><TextBlock Text="━  Original" Foreground="#19816B" FontSize="11" /><TextBlock Text="━  Scenario" Foreground="#5B7DB8" FontSize="11" /></StackPanel><TextBlock Text="Use the chart selector on Overview to switch between usage, daily rhythm and estimated costs." Classes="muted" FontSize="10" /></StackPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+              <Border Classes="card">
+                <StackPanel Spacing="13">
+                  <TextBlock Text="Your scenario runs" Classes="heading" />
+                  <TextBlock Text="Review the last 20 runs in this session. Reset clears the active chart comparison and keeps this history." Classes="muted" FontSize="11" />
+                  <Grid ColumnDefinitions="*,130,130"><TextBlock Text="STRATEGY" Classes="eyebrow" /><TextBlock Grid.Column="1" Text="ENERGY COST" Classes="eyebrow" HorizontalAlignment="Right" /><TextBlock Grid.Column="2" Text="SAVINGS" Classes="eyebrow" HorizontalAlignment="Right" /></Grid>
+                  <ItemsControl ItemsSource="{Binding ScenarioHistory}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ScenarioHistoryRowViewModel">
+                        <Border BorderBrush="#E5ECE7" BorderThickness="0,0,0,1" Padding="0,11">
+                          <Grid ColumnDefinitions="*,130,130" RowDefinitions="Auto,Auto">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" />
+                            <TextBlock Grid.Row="1" Text="{Binding Settings}" Classes="muted" FontSize="10" Margin="0,5,12,0" />
+                            <TextBlock Grid.Column="1" Text="{Binding CostText}" FontSize="12" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" Text="{Binding SavingsText}" FontSize="12" Foreground="#16765F" HorizontalAlignment="Right" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+        <TabItem Header="Bill details">
+          <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="18" Margin="0,18,0,10">
+              <StackPanel Spacing="6">
+                <TextBlock Text="See where every estimate comes from." FontSize="23" FontWeight="SemiBold" />
+                <TextBlock Text="Select a plan and billing period to inspect its energy charges."
+                           Classes="muted" FontSize="12" />
+                <TextBlock Text="{Binding BillingScheduleSummary}" FontWeight="Medium" FontSize="12" />
+              </StackPanel>
+              <Expander Header="Billing periods" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <Grid ColumnDefinitions="*,1.7*" IsEnabled="{Binding !IsBusy}">
+                  <StackPanel Spacing="7" Margin="0,0,24,0">
+                    <TextBlock Text="Period type" FontWeight="Medium" />
+                    <ComboBox SelectedIndex="{Binding BillingModeIndex, Mode=TwoWay}"
+                              HorizontalAlignment="Stretch" AutomationProperties.Name="Billing period type">
+                      <ComboBoxItem Content="Calendar months" />
+                      <ComboBoxItem Content="Estimated closing day" />
+                      <ComboBoxItem Content="Actual billing periods" />
+                    </ComboBox>
+                    <Button Content="Import bill history" Classes="secondary"
+                            Command="{Binding ImportBillHistoryCommand}" HorizontalAlignment="Left"
+                            Margin="0,4,0,0" />
+                    <TextBlock Text="Import CSV or Excel bill history to infer period boundaries from bill dates. Payment entries are skipped."
+                               Classes="muted" FontSize="11" />
+                    <Button Content="Apply billing periods" Classes="primary"
+                            Command="{Binding ApplyBillingScheduleCommand}" HorizontalAlignment="Left"
+                            Margin="0,4,0,0" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="7" IsVisible="{Binding IsEstimatedBilling}">
+                    <TextBlock Text="Monthly closing day" FontWeight="Medium" />
+                    <NumericUpDown Value="{Binding BillingClosingDay, Mode=TwoWay}" Minimum="1" Maximum="31"
+                                   Increment="1" FormatString="0" ParsingNumberStyle="Integer"
+                                   Width="110" HorizontalAlignment="Left"
+                                   AutomationProperties.Name="Monthly closing day" />
+                    <TextBlock Text="Each period ends at the start of this day. Shorter months use their last day."
+                               Classes="muted" FontSize="11" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="1" Spacing="7" IsVisible="{Binding IsActualBilling}">
+                    <TextBlock Text="Actual periods from your bills" FontWeight="Medium" />
+                    <TextBlock Text="Enter start date, end date and billing month, one period per line. Use YYYY-MM-DD for dates and YYYY-MM for the billing month. The start date is included and the end date is excluded."
+                               Classes="muted" FontSize="11" />
+                    <TextBox Text="{Binding BillingPeriodText, Mode=TwoWay}" AcceptsReturn="True"
+                             PlaceholderText="2025-06-15,2025-07-15,2025-07"
+                             AutomationProperties.Name="Actual billing periods as start date, end date and billing month"
+                             FontFamily="Cascadia Mono, Consolas, monospace" FontSize="12"
+                             MinHeight="90" MaxHeight="160" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="2025-06-15,2025-07-15,2025-07" Classes="muted" FontSize="11" />
+                    <TextBlock Text="{Binding BillingImportMessage}" Classes="muted" FontSize="11" />
+                  </StackPanel>
+                </Grid>
+              </Expander>
+              <Border IsVisible="{Binding HasBillingNotice}" Background="#F9F2E5"
+                      BorderBrush="#E9DFC9" BorderThickness="1" CornerRadius="8" Padding="13,10">
+                <TextBlock Text="{Binding BillingNotice}" Foreground="#755B31" FontSize="12" />
+              </Border>
+              <Grid ColumnDefinitions="*,1.15*">
+                <Border Classes="card" Margin="0,0,18,0">
+                  <StackPanel Spacing="15">
+                    <TextBlock Text="Billing period estimates" Classes="heading" />
+                    <ComboBox ItemsSource="{Binding Plans}" SelectedItem="{Binding SelectedPlan, Mode=TwoWay}"
+                              ItemTemplate="{StaticResource RatePlanNameTemplate}" HorizontalAlignment="Stretch"
+                              AutomationProperties.Name="Rate plan for bill details" />
+                    <Grid ColumnDefinitions="2.2*,*,*" Margin="10,0">
+                      <TextBlock Text="PERIOD" Classes="eyebrow" />
+                      <TextBlock Grid.Column="1" Text="USAGE" Classes="eyebrow" />
+                      <TextBlock Grid.Column="2" Text="COST" Classes="eyebrow" HorizontalAlignment="Right" />
+                    </Grid>
+                    <ListBox ItemsSource="{Binding MonthlyBills}" SelectedItem="{Binding SelectedMonth, Mode=TwoWay}"
+                             Background="Transparent" BorderThickness="0" MaxHeight="490"
+                             AutomationProperties.Name="Billing period estimates">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MonthlyBillRowViewModel">
+                          <Grid ColumnDefinitions="2.2*,*,*" RowDefinitions="Auto,Auto">
+                            <TextBlock Text="{Binding MonthLabel}" FontSize="12" Margin="0,0,6,0" />
+                            <TextBlock Grid.Column="1" Text="{Binding UsageText}" FontSize="12" />
+                            <TextBlock Grid.Column="2" Text="{Binding CostText}" FontSize="12" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right" />
+                            <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="{Binding CoverageText}"
+                                       Classes="muted" FontSize="10" Margin="0,4,0,0" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </StackPanel>
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="18">
+                  <Border Classes="card">
+                    <StackPanel Spacing="18">
+                      <TextBlock Text="Energy charge breakdown" Classes="heading" />
+                      <TextBlock Text="{Binding SelectedBillBreakdown}" FontFamily="Cascadia Mono, Consolas, monospace"
+                                 FontSize="12" LineHeight="23" />
+                    </StackPanel>
+                  </Border>
+                  <Border Background="#EDF1F5" CornerRadius="10" Padding="20"
+                          IsVisible="{Binding SelectedPlan.IsImplemented}">
+                    <StackPanel Spacing="9">
+                      <TextBlock Text="Residential Service rates" FontWeight="SemiBold" />
+                      <TextBlock Text="Winter billing months (October–May) use $0.082/kWh for all usage.&#10;&#10;Summer billing months (June–September) use $0.088/kWh for the first 650 kWh, $0.146/kWh for the next 350 kWh, and $0.151/kWh above 1,000 kWh.&#10;&#10;Estimates cover energy charges. Service charges, fuel adjustments, riders, taxes and other bill items are excluded."
+                                 Foreground="#657680" FontSize="11" LineHeight="18" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+      </TabControl>
+      <Grid Grid.Row="3" ColumnDefinitions="*,Auto" Margin="0,15,0,0">
+        <TextBlock Text="Independent planning tool · Rates from your supplied reference" Classes="muted" FontSize="10" />
+        <TextBlock Grid.Column="1" Text="{Binding ComparisonTimingText}" Classes="muted" FontSize="10" />
+      </Grid>
+    </Grid>
+  </Grid>
+</Window>
