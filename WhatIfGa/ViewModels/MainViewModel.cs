@@ -107,10 +107,11 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
     public string RecommendationText => _comparison?.Recommendation?.PlanName ?? "Import to estimate";
-    public string RecommendationDetail => _comparison is null ? "Seven plans registered. One calculation available." :
-        "Only Residential Service is implemented. A lowest-cost choice across all seven plans is not available yet.";
+    public string RecommendationDetail => _comparison is null
+        ? $"Seven plans registered. {_controller.Plans.Count(plan => plan.IsImplemented)} calculations available."
+        : $"Lowest estimated cost among {_comparison.Estimates.Count} implemented plans; other plan prices are not available.";
     public string ComparisonTimingText => _comparison is null ? "Energy charges only" :
-        $"{_controller.CurrentData.Count:N0} records · {_comparison.Elapsed.TotalMilliseconds:N0} ms · 1 of 7 plans priced";
+        $"{_controller.CurrentData.Count:N0} records · {_comparison.Elapsed.TotalMilliseconds:N0} ms · {_comparison.Estimates.Count} of 7 plans priced";
     private BillEstimate? ModifiedEstimate => _scenario?.ModifiedCosts.FirstOrDefault(bill => bill.PlanId == SelectedPlan?.PlanId);
     private decimal? ScenarioSavings => SelectedPlan is null ? null : _scenario?.Scenario.GetCostDifference(SelectedPlan.PlanId);
     public string ScenarioCostText => ModifiedEstimate is { } bill ? Money(bill.TotalCost) : "—";
