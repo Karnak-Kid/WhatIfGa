@@ -9,7 +9,7 @@ public sealed class RateCalculator
         new ResidentialServicePlan(),
         new PlaceholderRatePlan("smart-usage", "Smart Usage", "Time-of-use energy and demand pricing. Calculation coming soon."),
         new PlaceholderRatePlan("overnight-advantage", "Overnight Advantage", "Time-of-use pricing with overnight hours. Calculation coming soon."),
-        new PlaceholderRatePlan("nights-weekends", "Nights & Weekends", "Time-of-use pricing for nights and weekends. Calculation coming soon."),
+        new NightsAndWeekendsPlan(),
         new PlaceholderRatePlan("flatbill", "FlatBill", "Requires a personalized utility quote. Calculation unavailable."),
         new PlaceholderRatePlan("prepay", "PrePay", "Prepaid billing program. Applicable pricing is not implemented."),
         new PlaceholderRatePlan("pay-by-day", "Pay by Day", "Requires a personalized fixed daily utility quote. Calculation unavailable.")

@@ -2,7 +2,7 @@
 
 A local-first C# / Avalonia desktop application for exploring electricity usage, Residential Service energy charges, and what-if scenarios. The GUI uses MVVM, with CSV/storage, rate calculation, and presentation concerns in separate files and projects.
 
-**Implemented scope:** Residential Service is calculated using the rate illustration supplied with this project. All seven Georgia Power plan names appear in the application; six are explicit placeholders and never receive fabricated prices or compete for a recommendation. The app cannot yet identify the cheapest of all seven plans.
+**Implemented scope:** Residential Service and Nights & Weekends are calculated using the rate illustrations supplied with this project. All seven Georgia Power plan names appear in the application; the five unimplemented plans never receive fabricated prices or compete for a recommendation. Recommendations compare only the implemented plans.
 
 ## Run
 
@@ -99,12 +99,12 @@ The [Georgia Power residential rate-plan page](https://www.georgiapower.com/resi
 | Residential Service | Seasonal monthly energy calculation implemented |
 | Smart Usage | Placeholder; time-of-use and demand pricing pending |
 | Overnight Advantage | Placeholder; time-of-use pricing pending |
-| Nights & Weekends | Placeholder; time-of-use pricing pending |
+| Nights & Weekends | Implemented from the supplied off-peak/on-peak illustration |
 | FlatBill | Placeholder; requires a personalized utility quote |
 | PrePay | Placeholder; applicable pricing/program rules pending |
 | Pay by Day | Placeholder; requires a personalized fixed daily quote |
 
-“Available estimate” or a recommendation refers only to implemented rates. New `RatePlan` subclasses can join the registry when their complete pricing rules and fixtures are available.
+“Available estimate” or a recommendation refers only to implemented rates. Nights & Weekends uses the supplied illustration: $0.078/kWh off-peak and $0.303/kWh on-peak, Monday–Friday 2–7 p.m. from June through September, excluding observed U.S. federal holidays. The illustration does not enumerate holidays; the observed federal holiday calendar is the explicit assumption used here. All other hours, weekends, and holidays use the off-peak rate. New `RatePlan` subclasses can join the registry when their complete pricing rules and fixtures are available.
 
 ## What-if behavior
 
@@ -147,7 +147,7 @@ The app writes `usage-data.json` in that directory. This setting changes the sto
 | Requirements | Current coverage |
 | --- | --- |
 | FR1–FR3 | CSV/XLSX import/validation and local persistence |
-| FR4–FR6 | One implemented tariff and six visible placeholders; full seven-way comparison/recommendation pending |
+| FR4–FR6 | Two implemented tariffs and five visible placeholders; recommendations compare the implemented plans only |
 | FR7 | Monthly/tier energy-charge details with exclusions shown |
 | FR8 | Interactive historical usage and estimated-cost charts; historical replay rather than an independent forecast model |
 | FR9–FR10 | Usage reduction/time shifting with original-versus-modified estimates |
