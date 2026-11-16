@@ -4,7 +4,7 @@ Compare Georgia Power rate plans using hourly electricity readings and explore w
 
 ## Run the downloaded app
 
-Download the release for your operating system and processor, then extract the entire archive. Each build includes the .NET runtime.
+After extracting the project ZIP, open the `publish/` folder. Find the archive for your operating system and processor, then extract it before opening the app. Each build includes the .NET runtime.
 
 | Platform | Archive | How to start |
 | --- | --- | --- |
