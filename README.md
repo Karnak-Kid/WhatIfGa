@@ -27,7 +27,7 @@ dotnet run --project WhatIfGa --no-build
 ## Import the Excel workbook
 
 1. Open Wattif GA and select **Import usage**.
-2. Select the supplied `.xlsx` workbook wherever you saved it.
+2. Select [Watt-If_Test-Data.xlsx](TestData/Watt-If_Test-Data.xlsx) in the `TestData` folder of the extracted project.
 3. Use **Overview** to compare estimates. Open **Import report** to check warnings or errors.
 
 The workbook should contain one row per local hour with `Hour` or `Timestamp` and `kWh` columns. `Temp` is optional. You can also import a CSV in the same format. Excel is optional. Imported usage is saved locally. Select **Load sample year** to try the app before importing data.
