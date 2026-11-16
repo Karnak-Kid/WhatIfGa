@@ -7,8 +7,8 @@ public sealed class RateCalculator
     public IReadOnlyList<RatePlan> Plans { get; } = Array.AsReadOnly<RatePlan>(
     [
         new ResidentialServicePlan(),
-        new PlaceholderRatePlan("smart-usage", "Smart Usage", "Time-of-use energy and demand pricing. Calculation coming soon."),
-        new PlaceholderRatePlan("overnight-advantage", "Overnight Advantage", "Time-of-use pricing with overnight hours. Calculation coming soon."),
+        new SmartUsagePlan(),
+        new OvernightUsagePlan(),
         new NightsAndWeekendsPlan(),
         new PlaceholderRatePlan("flatbill", "FlatBill", "Requires a personalized utility quote. Calculation unavailable."),
         new PlaceholderRatePlan("prepay", "PrePay", "Prepaid billing program. Applicable pricing is not implemented."),
@@ -42,7 +42,7 @@ public sealed class RateCalculator
         return result.OrderBy(estimate => estimate.TotalCost).ToArray();
     }
 
-    /// <summary>Returns the cheapest available implementation only; this is not a seven-plan recommendation.</summary>
+    /// <summary>Returns the cheapest estimate among plans with recorded usage in the billing periods.</summary>
     public BillEstimate? Recommend(IReadOnlyList<BillEstimate> estimates)
     {
         ArgumentNullException.ThrowIfNull(estimates);

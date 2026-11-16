@@ -9,7 +9,7 @@ public sealed class NightsAndWeekendsPlan : RatePlan
     public const decimal OnPeakRate = 0.303m;
     public override string PlanId => "nights-weekends";
     public override string Name => "Nights & Weekends";
-    public override string Description => "Off-peak $0.078/kWh; summer weekday peak $0.303/kWh, 2–7 p.m. June–September, excluding observed U.S. federal holidays. Supplied illustration; energy only.";
+    public override string Description => "Off-peak is $0.078/kWh. On-peak is $0.303/kWh on weekdays from 2–7 p.m. June–September, excluding observed U.S. federal holidays.";
     public override bool IsImplemented => true;
 
     public override BillEstimate CalculateCost(IReadOnlyList<UsageData> data, CancellationToken cancellationToken = default)
@@ -20,51 +20,29 @@ public sealed class NightsAndWeekendsPlan : RatePlan
 
     public override BillEstimate CalculateCost(IReadOnlyList<UsageData> data, IReadOnlyList<BillingPeriod> periods,
         CancellationToken cancellationToken = default)
+        => CalculateByBillingPeriod(data, periods, CalculateCharges, cancellationToken);
+
+    private static IReadOnlyList<BillLineItem> CalculateCharges(BillingPeriod period, IReadOnlyList<UsageData> readings,
+        decimal totalKWh, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(data);
-        cancellationToken.ThrowIfCancellationRequested();
-        var ordered = BillingCalendar.OrderPeriods(periods);
-        var totals = new Dictionary<BillingPeriod, (decimal KWh, decimal PeakKWh, int RecordedHours)>();
-        var unassignedHours = 0;
-        foreach (var interval in data)
+        var peakKWh = 0m;
+        foreach (var reading in readings)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (interval.KWh < 0) throw new ArgumentException("Hourly kWh cannot be negative.", nameof(data));
-            var period = FindPeriod(ordered, DateOnly.FromDateTime(interval.Timestamp));
-            if (period is null) { unassignedHours++; continue; }
-            var total = totals.GetValueOrDefault(period);
-            totals[period] = (total.KWh + interval.KWh,
-                total.PeakKWh + (IsOnPeak(interval.Timestamp) ? interval.KWh : 0m),
-                total.RecordedHours + (UsageCoverage.IsExpectedHour(interval.Timestamp) ? 1 : 0));
+            if (IsOnPeak(reading.Timestamp)) peakKWh += reading.KWh;
         }
 
-        var bills = new List<MonthlyBill>(totals.Count);
-        foreach (var period in ordered)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!totals.TryGetValue(period, out var total)) continue;
-            var offPeak = total.KWh - total.PeakKWh;
-            var lines = new List<BillLineItem>
-            {
-                new("Off-peak", offPeak, OffPeakRate, offPeak * OffPeakRate),
-                new("On-peak • weekdays 2–7 p.m. June–September", total.PeakKWh, OnPeakRate, total.PeakKWh * OnPeakRate)
-            };
-            var expectedHours = period.Start < period.End ? UsageCoverage.CountExpectedHours(period.Start, period.End) : 0;
-            if (period.IncludesFinalDate) expectedHours += 24;
-            bills.Add(new MonthlyBill(period.BillingMonth.ToDateTime(TimeOnly.MinValue), total.KWh, lines.AsReadOnly())
-            {
-                Period = period, RecordedHours = total.RecordedHours, ExpectedHours = expectedHours
-            });
-        }
-        return new BillEstimate(PlanId, Name, bills.AsReadOnly()) { UnassignedHours = unassignedHours };
+        var offPeak = totalKWh - peakKWh;
+        return Array.AsReadOnly<BillLineItem>(
+        [
+            new("Off-peak", offPeak, OffPeakRate, offPeak * OffPeakRate),
+            new("On-peak • weekdays 2–7 p.m. June–September", peakKWh, OnPeakRate, peakKWh * OnPeakRate)
+        ]);
     }
 
     private static bool IsOnPeak(DateTime timestamp)
     {
-        if (timestamp.Month is < 6 or > 9 || timestamp.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ||
-            timestamp.Hour is < 14 or >= 19)
-            return false;
-        return !ObservedFederalHolidays(timestamp.Year).Contains(DateOnly.FromDateTime(timestamp));
+        return IsSummerWeekdayPeak(timestamp) && !ObservedFederalHolidays(timestamp.Year).Contains(DateOnly.FromDateTime(timestamp));
     }
 
     private static HashSet<DateOnly> ObservedFederalHolidays(int year)
@@ -101,15 +79,5 @@ public sealed class NightsAndWeekendsPlan : RatePlan
     {
         var last = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         return last.AddDays(-(((int)last.DayOfWeek - (int)day + 7) % 7));
-    }
-
-    private static BillingPeriod? FindPeriod(IReadOnlyList<BillingPeriod> periods, DateOnly date)
-    {
-        foreach (var period in periods)
-        {
-            if (period.Start > date) break;
-            if (period.Contains(date)) return period;
-        }
-        return null;
     }
 }

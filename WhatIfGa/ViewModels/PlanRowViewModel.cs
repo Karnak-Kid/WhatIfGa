@@ -11,7 +11,6 @@ public sealed class PlanRowViewModel(RatePlan plan) : ViewModelBase
     public string Name => plan.Name;
     public string Description => plan.Description;
     public bool IsImplemented => plan.IsImplemented;
-    public string Status => IsImplemented ? "Available" : "Planned";
     public string CostText
     {
         get => _costText;

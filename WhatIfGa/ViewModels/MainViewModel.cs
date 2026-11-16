@@ -17,7 +17,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
     private ComparisonResult? _comparison;
     private ScenarioResult? _scenario;
     private bool _isBusy, _isStatusError, _initialized, _isImportReportOpen;
-    private string _statusMessage = "Load a CSV or Excel workbook, or explore a year of sample usage.", _dataSource = "No usage loaded";
+    private string _statusMessage = "Import hourly usage or load the sample year.", _dataSource = "No usage loaded";
     private string _validationSummary = "No file imported yet.";
     private string _scenarioName = "My energy strategy";
     private decimal _reductionPercent = 10, _shiftPercent = 50;
@@ -106,12 +106,13 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
             return "";
         }
     }
-    public string RecommendationText => _comparison?.Recommendation?.PlanName ?? "Import to estimate";
-    public string RecommendationDetail => _comparison is null
-        ? $"Seven plans registered. {_controller.Plans.Count(plan => plan.IsImplemented)} calculations available."
-        : $"Lowest estimated cost among {_comparison.Estimates.Count} implemented plans; other plan prices are not available.";
-    public string ComparisonTimingText => _comparison is null ? "Energy charges only" :
-        $"{_controller.CurrentData.Count:N0} records · {_comparison.Elapsed.TotalMilliseconds:N0} ms · {_comparison.Estimates.Count} of 7 plans priced";
+    public string RecommendationText => _comparison?.Recommendation?.PlanName ?? (HasData ? "No estimate available" : "Import to estimate");
+    public string RecommendationDetail => _comparison switch
+    {
+        null => $"{Plans.Count(plan => plan.IsImplemented)} plans can be estimated from hourly usage.",
+        { Estimates.Count: 0 } => "Readings must fall within an applied billing period.",
+        _ => $"Lowest estimated cost among {_comparison.Estimates.Count} available plans."
+    };
     private BillEstimate? ModifiedEstimate => _scenario?.ModifiedCosts.FirstOrDefault(bill => bill.PlanId == SelectedPlan?.PlanId);
     private decimal? ScenarioSavings => SelectedPlan is null ? null : _scenario?.Scenario.GetCostDifference(SelectedPlan.PlanId);
     public string ScenarioCostText => ModifiedEstimate is { } bill ? Money(bill.TotalCost) : "—";
@@ -120,13 +121,13 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
     {
         get
         {
-            if (_scenario is null) return "Adjust usage, then run your scenario. Original history stays intact.";
+            if (_scenario is null) return "No scenario run yet.";
             if (ModifiedEstimate is not { } modified || ScenarioSavings is not { } savings)
                 return $"{_scenario.Scenario.Name} · {_scenario.Data.Sum(x => x.KWh):N1} kWh. {PlanSelectionMessage}";
 
             var originalCost = modified.TotalCost + savings;
             var change = originalCost > 0 ? -100m * savings / originalCost : 0m;
-            return $"{_scenario.Scenario.Name} · {modified.TotalKWh:N1} kWh in applied periods · {change:+0.0;-0.0;0.0}% energy cost change · {modified.PlanName}";
+            return $"{_scenario.Scenario.Name} · {modified.TotalKWh:N1} kWh in applied periods · {change:+0.0;-0.0;0.0}% cost change";
         }
     }
     public string ScenarioName { get => _scenarioName; set => this.RaiseAndSetIfChanged(ref _scenarioName, value); }
@@ -141,15 +142,14 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         get => _chartModeIndex;
         set { if (_chartModeIndex == value) return; this.RaiseAndSetIfChanged(ref _chartModeIndex, value); RefreshChart(); }
     }
-    public string ChartTitle => ChartModeIndex switch { 1 => "Your daily rhythm", 2 => "Estimated billing-period costs", 3 => "Same-period cost forecast", _ => "Your usage over time" };
     public string ChartSubtitle => ChartModeIndex switch
     {
         1 => "Average kWh per recorded hour of day · missing hours are excluded",
-        2 => SelectedEstimate is null ? PlanSelectionMessage : $"{SelectedPlan!.Name} energy charges by billing period",
+        2 => SelectedEstimate is null ? PlanSelectionMessage : $"{SelectedPlan!.Name} estimated charges by billing period",
         3 => SelectedEstimate is null ? PlanSelectionMessage : CanReplayCosts
-            ? "Recorded billing-period usage replayed one year later at the same rates"
+            ? "Recorded-period costs shown one year later using the original rate windows"
             : "Year 9999 cannot be projected further. Showing recorded-period costs at the same rates.",
-        _ => "Monthly usage · hover to explore your original and modified consumption"
+        _ => "Monthly kWh"
     };
     public string ChartUnit => ChartModeIndex >= 2 ? "$" : "kWh";
     private bool CanReplayCosts => SelectedEstimate?.Months.All(bill => bill.Period?.End.Year != 9999 && bill.Month.Year != 9999) == true;
@@ -159,7 +159,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         set { this.RaiseAndSetIfChanged(ref _selectedMonth, value); this.RaisePropertyChanged(nameof(SelectedBillBreakdown)); }
     }
     public string SelectedBillBreakdown => SelectedMonth?.Breakdown ??
-        (PlanSelectionMessage.Length > 0 ? PlanSelectionMessage : "Select a billing period to see its energy charges.");
+        (PlanSelectionMessage.Length > 0 ? PlanSelectionMessage : "Select a billing period to see its estimated charges.");
 
     public Task InitializeAsync()
     {
@@ -181,7 +181,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
                 ValidationSummary = $"Validated and restored {_controller.CurrentData.Count:N0} locally saved records.";
                 RefreshData();
                 await CompareAsync();
-                StatusMessage = "Your locally saved history is ready.";
+                StatusMessage = "Saved usage loaded.";
             }
             else await LoadDemoCoreAsync();
         });
@@ -191,8 +191,8 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (_selectUsageFile is null) { StatusMessage = "A desktop file picker is required to import usage data."; return; }
         var path = await _selectUsageFile();
-        if (path is null) { StatusMessage = "Import cancelled. Your current data is unchanged."; return; }
-        StatusMessage = "Validating and saving your usage file locally…";
+        if (path is null) { StatusMessage = "Import cancelled."; return; }
+        StatusMessage = "Validating usage file…";
         var result = await _controller.ImportFileAsync(path);
         ValidationMessages.Clear();
         foreach (var error in result.Errors) ValidationMessages.Add("Error · " + error);
@@ -208,7 +208,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         DataSource = Path.GetFileName(path) + " · saved on this device";
         ResetResultsForNewData();
         await CompareAsync();
-        StatusMessage = result.Warnings.Count > 0 ? "Import complete. Coverage notices are available in the Import report." : "Usage data validated, saved locally, and compared.";
+        StatusMessage = result.Warnings.Count > 0 ? "Usage imported. See the Import report for coverage notices." : "Usage imported.";
     });
 
     private Task LoadDemoAsync() => RunBusyAsync(LoadDemoCoreAsync);
@@ -221,22 +221,22 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         ValidationMessages.Add("Synthetic data is provided to explore the application; import your own CSV or Excel workbook for a personal estimate.");
         ResetResultsForNewData();
         await CompareAsync();
-        StatusMessage = "Exploring demo data. Import a CSV or Excel workbook to analyze your own usage.";
+        StatusMessage = "Sample year loaded.";
     }
 
     private async Task CompareAsync()
     {
-        StatusMessage = "Comparing available rate calculations…";
+        StatusMessage = "Comparing rate plans…";
         UpdateComparison(await _controller.ComparePlans());
         StatusMessage = _comparison?.Recommendation is null ? "No recorded usage falls within the applied billing periods."
-            : "Residential Service estimate ready. Six plans await pricing implementation.";
+            : $"Estimates ready for {_comparison.Estimates.Count} rate plans.";
     }
 
     private Task RunScenarioAsync() => RunBusyAsync(async () =>
     {
         if (string.IsNullOrWhiteSpace(ScenarioName) || ScenarioName.Length > 80)
             throw new ArgumentException("Give your scenario a name between 1 and 80 characters.");
-        StatusMessage = "Applying your strategy and recalculating…";
+        StatusMessage = "Calculating scenario…";
         var definition = new UsageScenario
         {
             Name = ScenarioName.Trim(), ReductionPercent = ReductionPercent, ShiftPercent = ShiftPercent,
@@ -245,10 +245,10 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         _scenario = await _controller.RunScenario(definition);
         ScenarioHistory.Insert(0, new ScenarioHistoryRowViewModel(definition.Name,
             $"Reduce {definition.ReductionPercent:N0}% · shift {definition.ShiftPercent:N0}% from {definition.SourceStartHour:00}:00–{definition.SourceEndHour:00}:00 by {definition.ShiftHours:+0;-0;0}h",
-            ScenarioCostText, ScenarioSavingsText));
+            ScenarioCostText, ScenarioSavingsText) { PlanName = SelectedPlan?.Name });
         if (ScenarioHistory.Count > 20) ScenarioHistory.RemoveAt(20);
         RefreshData();
-        StatusMessage = "Scenario complete. Compare the chart overlay and the original estimate; run again to test another strategy.";
+        StatusMessage = "Scenario calculated.";
     });
 
     private void ResetScenario()
@@ -258,7 +258,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         ReductionPercent = 10; ShiftPercent = 50; ShiftHours = 5; SourceStartHour = 14; SourceEndHour = 19;
         ScenarioName = "My energy strategy";
         RefreshData();
-        StatusMessage = "Scenario overlay cleared. Earlier scenario results remain in this session’s history.";
+        StatusMessage = "Scenario reset. History retained.";
     }
 
     private void ResetResultsForNewData()
@@ -276,7 +276,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
         if (IsBusy) return;
         IsBusy = true; IsStatusError = false;
         try { await work(); }
-        catch (OperationCanceledException) { StatusMessage = "Operation cancelled. You can continue using the application."; }
+        catch (OperationCanceledException) { StatusMessage = "Operation cancelled."; }
         catch (Exception error)
         {
             IsStatusError = true;
@@ -319,7 +319,7 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
     {
         foreach (var name in new[] { nameof(HasData), nameof(HasScenario), nameof(DataSummary), nameof(TotalUsageText),
             nameof(EstimatedCostText), nameof(AverageMonthlyText), nameof(RecommendationText), nameof(RecommendationDetail),
-            nameof(ComparisonTimingText), nameof(ScenarioCostText), nameof(ScenarioSavingsText), nameof(ScenarioSummary),
+            nameof(ScenarioCostText), nameof(ScenarioSavingsText), nameof(ScenarioSummary),
             nameof(PlanSelectionMessage), nameof(SelectedBillBreakdown), nameof(BillingScheduleSummary), nameof(BillingNotice), nameof(HasBillingNotice) })
             this.RaisePropertyChanged(name);
         RefreshChart();
@@ -369,7 +369,6 @@ public sealed partial class MainViewModel : ViewModelBase, IDisposable
                 }
             }
         }
-        this.RaisePropertyChanged(nameof(ChartTitle));
         this.RaisePropertyChanged(nameof(ChartSubtitle));
         this.RaisePropertyChanged(nameof(ChartUnit));
     }

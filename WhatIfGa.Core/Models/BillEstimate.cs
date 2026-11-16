@@ -12,7 +12,7 @@ public sealed record BillEstimate(string PlanId, string PlanName, IReadOnlyList<
     public string GetBreakdown()
     {
         var result = new StringBuilder();
-        result.AppendLine($"{PlanName} — energy charges only");
+        result.AppendLine($"{PlanName} — estimated charges");
         foreach (var month in Months)
         {
             var periodLabel = month.Period is { } period
@@ -20,7 +20,7 @@ public sealed record BillEstimate(string PlanId, string PlanName, IReadOnlyList<
                 : month.Month.ToString("MMM yyyy", CultureInfo.InvariantCulture);
             result.AppendLine($"{periodLabel}: {month.KWh:N2} kWh • {month.TotalCost.ToString("C2", CultureInfo.GetCultureInfo("en-US"))}");
             foreach (var item in month.LineItems)
-                result.AppendLine($"  {item.Description}: {item.KWh:0.####} × ${item.Rate:0.000}/kWh = ${item.Amount:0.00##}");
+                result.AppendLine($"  {item.Description}: {item.Quantity:0.####} {item.Unit} × ${item.Rate:0.00#}/{item.Unit} = ${item.Amount:0.00##}");
             if (month.IsPartial)
                 result.AppendLine($"  Partial coverage: {month.RecordedHours:N0} of {month.ExpectedHours:N0} hourly readings.");
         }

@@ -46,7 +46,7 @@ internal static class BillingRegressionTests
             new(new DateTime(2025, 7, 20), 900m),
         ];
         var calculator = new RateCalculator();
-        var estimate = calculator.Compare(usage, schedule).Single();
+        var estimate = calculator.Compare(usage, schedule).Single(plan => plan.PlanId == "residential-service");
         Equal(2, estimate.Months.Count, "actual periods produce two distinct bills");
         Equal(2, estimate.UnassignedHours, "rows before and at the last exclusive end are outside the schedule");
         Equal(june, estimate.Months[0].Period, "earlier period is billed first");
@@ -58,7 +58,7 @@ internal static class BillingRegressionTests
         Equal(150.90m, estimate.TotalCost, "bill total excludes uncovered usage");
 
         var reduced = new UsageScenario { ReductionPercent = 10m }.Apply(usage);
-        var modifiedEstimate = calculator.Compare(reduced, schedule).Single();
+        var modifiedEstimate = calculator.Compare(reduced, schedule).Single(plan => plan.PlanId == "residential-service");
         Equal(129.43m, modifiedEstimate.TotalCost, "scenario compares the same two actual periods");
         Equal(2, modifiedEstimate.UnassignedHours, "reduction preserves coverage of the original schedule");
     }
@@ -84,14 +84,14 @@ internal static class BillingRegressionTests
             .Select(hour => new UsageData(spring.ToDateTime(new TimeOnly(hour, 0)), 1m))
             .ToArray();
         var calculator = new RateCalculator();
-        var completeBill = calculator.Compare(complete, schedule).Single().Months.Single();
+        var completeBill = calculator.Compare(complete, schedule).Single(plan => plan.PlanId == "residential-service").Months.Single();
         Equal(23, completeBill.ExpectedHours, "actual billing period expected coverage accounts for DST");
         Equal(23, completeBill.RecordedHours, "all expected local hours were recorded");
         Check(!completeBill.IsPartial, "a complete spring-forward day is not marked partial");
 
         var incomplete = complete.Where(row => row.Hour != 4)
             .Append(new UsageData(spring.ToDateTime(new TimeOnly(2, 0)), 1m)).ToArray();
-        var incompleteBill = calculator.Compare(incomplete, schedule).Single().Months.Single();
+        var incompleteBill = calculator.Compare(incomplete, schedule).Single(plan => plan.PlanId == "residential-service").Months.Single();
         Equal(22, incompleteBill.RecordedHours, "an invalid spring-forward label cannot fill a missing expected hour");
         Equal(23m, incompleteBill.KWh, "stored energy remains included in the estimate");
         Check(incompleteBill.IsPartial, "one expected reading is missing even with 23 stored rows");
@@ -105,7 +105,7 @@ internal static class BillingRegressionTests
             new AppController(new DataManager(files.StorageDirectory), new RateCalculator()));
         await vm.ImportCommand.ExecuteAsync();
         var residential = vm.Plans.Single(plan => plan.PlanId == "residential-service");
-        var unavailable = vm.Plans.Single(plan => plan.PlanId == "smart-usage");
+        var unavailable = vm.Plans.Single(plan => plan.PlanId == "flatbill");
         vm.SelectedPlan = unavailable;
         Equal("—", vm.EstimatedCostText, "unavailable plans have no estimate");
         Check(vm.MonthlyBills.Count == 0 && vm.SelectedMonth is null, "previous plan's bill cannot remain selected");

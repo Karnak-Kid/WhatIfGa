@@ -12,6 +12,9 @@ var tests = new (string Name, Func<Task> Run)[]
     ("Calendar months reset tiers and select seasons", () => RunSync(TestMonthBoundaries)),
     ("Monthly currency rounding preserves sub-cent intervals", () => RunSync(TestRounding)),
     ("All seven plans are registered; placeholders cannot win", () => RunSync(TestRegistry)),
+    ("Smart Usage classifies recorded hours and resets demand each billing period", () => RunSync(RatePlanRegressionTests.SmartUsage)),
+    ("Overnight Advantage bills midnight, morning, and summer weekday boundaries", () => RunSync(RatePlanRegressionTests.OvernightAdvantage)),
+    ("GUI selects the new rate plans and recalculates scenario charges", RatePlanRegressionTests.ViewModelScenarios),
     ("Scenario reduction and shifting conserve expected energy", () => RunSync(TestScenario)),
     ("Shifting merges collisions and preserves calendar days", () => RunSync(TestShiftCollisions)),
     ("Malformed scenario settings are rejected", () => RunSync(TestInvalidScenario)),
@@ -156,11 +159,13 @@ static void TestRegistry()
     var calculator = new RateCalculator();
     Equal(7, calculator.Plans.Count, "plan registry count");
     Equal(7, calculator.Plans.Select(plan => plan.PlanId).Distinct().Count(), "unique plan ids");
-    Equal(1, calculator.Plans.Count(plan => plan.IsImplemented), "implemented plan count");
+    string[] implementedPlanIds = ["residential-service", "smart-usage", "overnight-advantage", "nights-weekends"];
+    Check(implementedPlanIds.ToHashSet().SetEquals(calculator.Plans.Where(plan => plan.IsImplemented).Select(plan => plan.PlanId)),
+        "implemented plan IDs");
     var data = new UsageData[] { new(new DateTime(2025, 7, 1), 1200m) };
     var estimates = calculator.Compare(data);
-    Equal(1, estimates.Count, "placeholders excluded from comparison");
-    Equal("Residential Service", calculator.Recommend(estimates)!.PlanName, "eligible recommendation");
+    Equal(implementedPlanIds.Length, estimates.Count, "placeholders excluded from comparison");
+    Equal("overnight-advantage", calculator.Recommend(estimates)!.PlanId, "overnight usage can recommend the cheapest available plan");
     Check(calculator.Recommend(Array.Empty<BillEstimate>()) is null, "empty estimates should not recommend");
     foreach (var placeholder in calculator.Plans.Where(plan => !plan.IsImplemented))
         Throws<NotSupportedException>(() => placeholder.CalculateCost(data), placeholder.Name);
@@ -496,11 +501,15 @@ static void TestAnnualPerformance()
     var watch = Stopwatch.StartNew();
     var estimates = calculator.Compare(year);
     watch.Stop();
-    Equal(1, estimates.Count, "implemented annual estimate count");
-    Equal(12, estimates.Single().Months.Count, "annual monthly bill count");
-    Equal(year.Sum(row => row.KWh), estimates.Single().TotalKWh, "annual usage conservation");
+    Equal(4, estimates.Count, "implemented annual estimate count");
+    var totalUsage = year.Sum(row => row.KWh);
+    foreach (var estimate in estimates)
+    {
+        Equal(12, estimate.Months.Count, $"{estimate.PlanName} annual monthly bill count");
+        Equal(totalUsage, estimate.TotalKWh, $"{estimate.PlanName} annual usage conservation");
+    }
     Check(watch.Elapsed < TimeSpan.FromSeconds(5), $"comparison took {watch.Elapsed.TotalSeconds:F3}s");
-    Console.WriteLine($"      Annual comparison: {watch.Elapsed.TotalMilliseconds:F1} ms; 8,760 records; 1 implemented / 7 registered plans.");
+    Console.WriteLine($"      Annual comparison: {watch.Elapsed.TotalMilliseconds:F1} ms; 8,760 records; {estimates.Count} implemented / {calculator.Plans.Count} registered plans.");
 }
 
 static void Equal<T>(T expected, T actual, string context)

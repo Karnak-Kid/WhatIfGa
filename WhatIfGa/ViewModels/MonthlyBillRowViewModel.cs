@@ -18,11 +18,11 @@ public sealed class MonthlyBillRowViewModel(MonthlyBill bill)
         ? $"{period.Days} days · {bill.RecordedHours:N0}/{bill.ExpectedHours:N0} recorded hours" + (bill.IsPartial ? " · partial" : "")
         : "";
     private string DailyAverages => Period is { Days: > 0 } period && !bill.IsPartial
-        ? $"\n{bill.KWh / period.Days:N1} kWh/day · {(bill.TotalCost / period.Days).ToString("C2", Us)}/day estimated energy"
+        ? $"\n{bill.KWh / period.Days:N1} kWh/day · {(bill.TotalCost / period.Days).ToString("C2", Us)}/day estimated cost"
         : "";
 
     public string Breakdown => $"{MonthLabel} · {UsageText}\nBilling month · {bill.Month.ToString("MMMM yyyy", Us)}\n{CoverageText}{DailyAverages}\n\n" +
         string.Join("\n\n", bill.LineItems.Select(line =>
-            $"{line.Description}\n{line.KWh:N3} kWh × ${line.Rate:0.000}/kWh = ${line.Amount:N2}")) +
-        $"\n\nEstimated energy subtotal · {CostText}\n\nEnergy charges use recorded consumption and the supplied rate illustration. Service charges, fuel adjustments, riders and taxes are excluded.";
+            string.Create(Us, $"{line.Description}\n{line.Quantity:N3} {line.Unit} × ${line.Rate:0.00#}/{line.Unit} = ${line.Amount:#,0.00##}"))) +
+        $"\n\nEstimated subtotal · {CostText} (rounded to cents)\n\nService charges, fuel adjustments, riders and taxes are excluded.";
 }
