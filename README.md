@@ -34,6 +34,15 @@ The workbook should contain one row per local hour with `Hour` or `Timestamp` an
 
 For a separate bill-history workbook, go to **Bill details → Billing periods → Import bill history**. Review the inferred dates, then select **Apply billing periods**.
 
+## Completed features
+
+- **Usage charts and validation.** View monthly consumption and average usage by hour. The app checks imported CSV and Excel files and flags gaps in the readings.
+- **Rate plan comparison.** Compare Residential Service, Smart Usage, Overnight Advantage, and Nights & Weekends using the supplied rates. Smart Usage includes a demand charge based on the highest recorded hour in each billing period.
+- **Billing estimates.** Use calendar months, an estimated closing day, or actual bill dates. Bill details show how each charge was calculated and how much of the period is covered by the readings.
+- **What-if scenarios.** Model a reduction in electricity use or shift usage to different hours. Compare the resulting costs with the original estimate for the selected plan.
+
+Estimates exclude service charges, fuel adjustments, riders, and taxes. The plan list marks FlatBill, PrePay, and Pay by Day as unavailable.
+
 ## AI Use Disclaimer
 
 AI was used to generate the user interface, the import functionality and the algorithms that calculate the Georgia power rate plans. Manual testing was done to verify the accuracy of the calculated output and the integrity of the GUI.
